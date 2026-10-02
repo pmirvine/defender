@@ -1,4 +1,5 @@
 """Defender: main loop. Fixed 60 Hz logic, 304x256 scaled display."""
+import argparse
 import sys
 
 import pygame
@@ -6,6 +7,8 @@ import pygame
 import controls
 import font
 import highscores
+import settings
+from display import Display
 from attract import Attract
 from game import Game
 from input import read_inputs
@@ -15,11 +18,28 @@ W, H = 304, 256
 DT = 1.0 / 60.0
 
 
-def main():
+def parse_args(argv=None):
+    ap = argparse.ArgumentParser(prog="defender", description="Defender (Williams, 1981) in pygame-ce")
+    ap.add_argument("--scale", type=settings.parse_scale, metavar="N|auto",
+                    help="pixel scale: window is N x the 304x256 arcade screen (1-%d), or 'auto' to fit "
+                         "your desktop" % settings.MAX_SCALE)
+    ap.add_argument("--fullscreen", action=argparse.BooleanOptionalAction, help="start fullscreen")
+    ap.add_argument("--smooth", action=argparse.BooleanOptionalAction,
+                    help="smooth scaling instead of crisp square pixels")
+    return ap.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    prefs = settings.load()
+    for key in ("scale", "fullscreen", "smooth"):  # command line overrides saved settings for this run
+        if getattr(args, key) is not None:
+            prefs[key] = getattr(args, key)
     pygame.mixer.pre_init(22050, -16, 1, 512)
     pygame.init()
     pygame.display.set_caption("DEFENDER")
-    screen = pygame.display.set_mode((W, H), pygame.SCALED | pygame.RESIZABLE, vsync=1)
+    display = Display(**prefs)
+    screen = display.canvas
     pygame.mouse.set_visible(False)
 
     try:
@@ -61,6 +81,21 @@ def main():
                 return
             if ev.type in (pygame.KEYDOWN, pygame.KEYUP) and ev.key in controls.TOGGLE_KEYS:
                 pulses.add(ev.key)
+            if ev.type == pygame.KEYDOWN and not (menu is not None and menu.waiting):
+                changed = True
+                if ev.key == pygame.K_F11:
+                    display.toggle_fullscreen()
+                elif ev.key == pygame.K_F8:
+                    display.change_scale(+1)
+                elif ev.key == pygame.K_F7:
+                    display.change_scale(-1)
+                elif ev.key == pygame.K_F9:
+                    display.toggle_smooth()
+                else:
+                    changed = False
+                if changed:
+                    settings.save(display.current())
+                    continue
             if menu is not None:
                 if menu.handle_event(ev):
                     menu = None
@@ -128,7 +163,7 @@ def main():
             menu.draw(screen, pygame.time.get_ticks() // 16)
         else:
             attract.draw(screen, credits)
-        pygame.display.flip()
+        display.present()
 
 
 if __name__ == "__main__":

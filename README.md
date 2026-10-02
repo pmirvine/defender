@@ -37,6 +37,22 @@ Press `F2` on the title screen to open the **Controls** menu and rebind any acti
 `~/.defender_controls.json`; press `R` in the menu to restore defaults. A gamepad also works (stick moves,
 buttons 0-4 = thrust, fire, smart bomb, hyperspace, reverse).
 
+## Display and scaling
+
+The game renders at the arcade's 304x256 and scales that to the window. Options (command line overrides the
+saved setting for that run):
+
+```sh
+.venv/bin/python -m defender --scale 4            # window = 4x the arcade screen (1-16)
+.venv/bin/python -m defender --scale auto         # largest whole multiple that fits your desktop (default)
+.venv/bin/python -m defender --fullscreen         # also --no-fullscreen
+.venv/bin/python -m defender --smooth             # smoothed scaling (default is crisp square pixels)
+```
+
+Crisp mode only uses whole-number scales (letterboxed if the window doesn't divide evenly) so every game pixel is
+the same size. In-game hotkeys, saved to `~/.defender_settings.json`: `F7`/`F8` smaller/larger window,
+`F9` crisp/smooth, `F11` fullscreen (on a Mac laptop hold `fn`). The window is also freely resizable.
+
 ## What's implemented
 
 - **Gameplay** (`game.py`, `entities.py`, `waves.py`, `terrain.py`, `rng.py`): ship physics, lasers, smart bombs,
